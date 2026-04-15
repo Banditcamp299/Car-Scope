@@ -1,31 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Car, Zap, TrendingDown, Landmark, ShoppingCart, ExternalLink, X, ChevronLeft, ChevronRight, Eye, Info } from 'lucide-react';
+import { Search, Car, Zap, TrendingDown, Landmark, ShoppingCart, ExternalLink, Info, Filter, ArrowUpRight, Gauge, MapPin } from 'lucide-react';
 
-// --- DATABASE & LOGIC ---
-const carData = {
-  "Toyota": { models: ["4Runner", "Camry", "Corolla", "Highlander", "RAV4", "Tacoma", "Tundra"], base: 38000 },
-  "Honda": { models: ["Accord", "Civic", "CR-V", "Pilot", "Odyssey"], base: 34000 },
-  "Ford": { models: ["F-150", "Mustang", "Explorer", "Ranger"], base: 48000 },
-  "BMW": { models: ["3 Series", "5 Series", "X3", "X5", "M4"], base: 58000 },
-  "Tesla": { models: ["Model 3", "Model Y", "Model S", "Model X"], base: 50000 }
+// --- MASSIVE CANADIAN MARKET DATABASE ---
+const carDatabase = {
+  "Acura": ["ILX", "Integra", "MDX", "NSX", "RDX", "RLX", "TLX", "TSX"],
+  "Audi": ["A3", "A4", "A5", "A6", "A7", "A8", "Q3", "Q5", "Q7", "Q8", "RS5", "RS6", "S4", "S5", "TT"],
+  "BMW": ["2 Series", "3 Series", "4 Series", "5 Series", "7 Series", "8 Series", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "M2", "M3", "M4", "M5", "Z4"],
+  "Chevrolet": ["Blazer", "Bolt", "Camaro", "Colorado", "Corvette", "Equinox", "Malibu", "Silverado 1500", "Silverado 2500", "Suburban", "Tahoe", "Traverse"],
+  "Dodge": ["Challenger", "Charger", "Durango", "Grand Caravan", "Ram 1500"],
+  "Ford": ["Bronco", "Bronco Sport", "Edge", "Escape", "Expedition", "Explorer", "F-150", "F-250", "Fiesta", "Focus", "Fusion", "Mustang", "Ranger"],
+  "GMC": ["Acadia", "Canyon", "Sierra 1500", "Sierra 2500", "Terrain", "Yukon"],
+  "Honda": ["Accord", "Civic", "CR-V", "Fit", "HR-V", "Insight", "Odyssey", "Passport", "Pilot", "Ridgeline"],
+  "Hyundai": ["Elantra", "Ioniq 5", "Ioniq 6", "Kona", "Palisade", "Santa Fe", "Sonata", "Tucson", "Venue"],
+  "Jeep": ["Cherokee", "Compass", "Gladiator", "Grand Cherokee", "Renegade", "Wrangler"],
+  "Kia": ["Ev6", "Forte", "Niro", "Rio", "Seltos", "Sorento", "Soul", "Sportage", "Stinger", "Telluride"],
+  "Lexus": ["ES", "GS", "GX", "IS", "LS", "LX", "NX", "RC", "RX", "UX"],
+  "Mazda": ["CX-3", "CX-30", "CX-5", "CX-50", "CX-9", "Mazda3", "Mazda6", "MX-5 Miata"],
+  "Mercedes-Benz": ["C-Class", "E-Class", "S-Class", "CLA", "CLS", "GLA", "GLB", "GLC", "GLE", "GLS", "G-Wagon", "SL"],
+  "Nissan": ["Altima", "Ariya", "Frontier", "Kicks", "Leaf", "Maxima", "Murano", "Pathfinder", "Qashqai", "Rogue", "Sentra", "Titan", "Z"],
+  "Porsche": ["911", "718 Boxster", "718 Cayman", "Cayenne", "Macan", "Panamera", "Taycan"],
+  "Subaru": ["Ascent", "BRZ", "Crosstrek", "Forester", "Impreza", "Legacy", "Outback", "WRX"],
+  "Tesla": ["Model 3", "Model S", "Model X", "Model Y", "Cybertruck"],
+  "Toyota": ["4Runner", "86", "Avalon", "Camry", "Corolla", "Corolla Cross", "Highlander", "Prius", "RAV4", "Sequoia", "Sienna", "Supra", "Tacoma", "Tundra", "Venza"],
+  "Volkswagen": ["Atlas", "Golf", "GTI", "ID.4", "Jetta", "Passat", "Taos", "Tiguan"],
+  "Volvo": ["S60", "S90", "V60", "XC40", "XC60", "XC90"]
 };
 
-const years = Array.from({ length: 30 }, (_, i) => 2025 - i);
+const years = Array.from({ length: 35 }, (_, i) => 2025 - i);
 
-// --- MAIN APP ---
 export default function CarScopeApp() {
-  const [filters, setFilters] = useState({ make: 'Toyota', model: 'Tacoma', year: 2022, price: 32000 });
-  const [valuation, setValuation] = useState({ wholesale: 35000, tradeIn: 38000, retail: 41000 });
-  const [selectedGallery, setSelectedGallery] = useState(null);
-  const [imgIndex, setImgIndex] = useState(0);
-  const [hoveredImg, setHoveredImg] = useState(null);
+  const [filters, setFilters] = useState({ make: '', model: '', year: 2021, price: '' });
+  const [valuation, setValuation] = useState({ wholesale: 0, tradeIn: 0, retail: 0 });
 
-  // Update Valuation on change
   useEffect(() => {
-    if (filters.make) {
-      const baseMSRP = carData[filters.make].base;
+    if (filters.make && filters.year) {
       const age = 2025 - filters.year;
-      const currentRetail = baseMSRP * Math.pow(0.89, age);
+      let baseMSRP = 42000;
+      if (["BMW", "Porsche", "Mercedes-Benz", "Lexus", "Tesla", "Audi"].includes(filters.make)) baseMSRP = 72000;
+      if (["Toyota", "Honda", "Subaru"].includes(filters.make)) baseMSRP = 39000;
+      
+      const currentRetail = baseMSRP * Math.pow(0.885, age);
       setValuation({
         retail: Math.round(currentRetail),
         tradeIn: Math.round(currentRetail * 0.83),
@@ -34,149 +48,187 @@ export default function CarScopeApp() {
     }
   }, [filters.make, filters.year]);
 
-  // Mock Result with Gallery Images
-  const currentListing = {
-    id: 1,
-    title: `${filters.year} ${filters.make} ${filters.model}`,
-    price: Number(filters.price),
-    images: [
-      "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1532581291347-9c39cf10a73c?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80"
-    ]
+  // Deep Link Generators for Kijiji and AutoTrader
+  const getKijijiUrl = () => {
+    const query = `${filters.year}+${filters.make}+${filters.model}`.replace(/\s+/g, '+');
+    return `https://www.kijiji.ca/b-cars-vehicles/canada/${query}/k0c174l0`;
   };
 
-  const isGreatDeal = currentListing.price <= valuation.wholesale;
+  const getAutoTraderUrl = () => {
+    return `https://www.autotrader.ca/cars/${filters.make}/${filters.model}/?rcp=15&rcs=0&srt=3&yrl=${filters.year}&yrh=${filters.year}&prx=-1&loc=Canada`;
+  };
+
+  const isDeal = filters.price && filters.price <= valuation.wholesale;
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] text-slate-200 font-sans p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#080a11] text-slate-200 font-sans p-2 md:p-8">
+      <div className="max-w-7xl mx-auto">
         
-        {/* Header */}
-        <div className="flex justify-between items-center mb-10">
+        {/* Navigation Bar */}
+        <nav className="flex items-center justify-between mb-8 px-4 py-3 bg-[#111522] border border-slate-800 rounded-2xl shadow-2xl">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg"><Zap size={24} className="fill-white text-white"/></div>
-            <h1 className="text-2xl font-black tracking-tighter uppercase italic">CAR<span className="text-blue-500">SCOPE</span></h1>
+            <div className="bg-blue-600 p-2 rounded-lg"><Zap size={22} className="fill-white text-white"/></div>
+            <h1 className="text-xl font-black tracking-tighter uppercase italic">CAR<span className="text-blue-500">SCOPE</span></h1>
           </div>
-          <div className="text-[10px] font-bold text-slate-500 tracking-widest border border-slate-800 px-3 py-1 rounded-full uppercase">Sourcing v2.0</div>
-        </div>
+          <div className="hidden md:flex gap-6 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+            <span className="text-blue-500 underline decoration-2 underline-offset-8">Sourcing</span>
+            <span className="hover:text-white cursor-pointer transition-colors">Market Trends</span>
+            <span className="hover:text-white cursor-pointer transition-colors">Inventory</span>
+          </div>
+          <button className="bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-bold px-4 py-2 rounded-lg border border-slate-700 transition-all">LOGOUT</button>
+        </nav>
 
-        <div className="grid lg:grid-cols-12 gap-8">
+        <div className="grid lg:grid-cols-12 gap-6">
           
-          {/* SEARCH BAR PANEL */}
-          <div className="lg:col-span-4 bg-[#161c2d] border border-slate-800 rounded-3xl p-6 h-fit sticky top-8">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Filter Listing</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Vehicle Make</label>
-                <select className="w-full bg-[#0b0f1a] border border-slate-700 rounded-xl p-3 mt-1 outline-none focus:border-blue-500" value={filters.make} onChange={e => setFilters({...filters, make: e.target.value})}>
-                  {Object.keys(carData).map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
+          {/* LEFT SIDEBAR: FILTERS */}
+          <div className="lg:col-span-3 space-y-4">
+            <div className="bg-[#111522] border border-slate-800 rounded-3xl p-6 shadow-xl">
+              <div className="flex items-center gap-2 mb-6 text-slate-400 font-bold text-xs uppercase tracking-widest">
+                <Filter size={14}/> Quick Filter
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              
+              <div className="space-y-5">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Year</label>
-                  <select className="w-full bg-[#0b0f1a] border border-slate-700 rounded-xl p-3 mt-1 outline-none" value={filters.year} onChange={e => setFilters({...filters, year: e.target.value})}>
-                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                  <label className="text-[10px] font-black text-slate-600 uppercase mb-2 block tracking-widest">Make</label>
+                  <select className="w-full bg-[#080a11] border border-slate-800 rounded-xl p-3 text-sm focus:border-blue-500 outline-none transition-all"
+                    value={filters.make} onChange={e => setFilters({...filters, make: e.target.value, model: ''})}>
+                    <option value="">Select Manufacturer</option>
+                    {Object.keys(carDatabase).sort().map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
+
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Price</label>
-                  <input type="number" className="w-full bg-[#0b0f1a] border border-slate-700 rounded-xl p-3 mt-1 outline-none text-white font-bold" value={filters.price} onChange={e => setFilters({...filters, price: e.target.value})} />
+                  <label className="text-[10px] font-black text-slate-600 uppercase mb-2 block tracking-widest">Model</label>
+                  <select className="w-full bg-[#080a11] border border-slate-800 rounded-xl p-3 text-sm focus:border-blue-500 outline-none disabled:opacity-20 transition-all"
+                    disabled={!filters.make} value={filters.model} onChange={e => setFilters({...filters, model: e.target.value})}>
+                    <option value="">Select Model</option>
+                    {filters.make && carDatabase[filters.make].map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-600 uppercase mb-2 block tracking-widest">Year</label>
+                    <select className="w-full bg-[#080a11] border border-slate-800 rounded-xl p-3 text-sm focus:border-blue-500 outline-none"
+                      value={filters.year} onChange={e => setFilters({...filters, year: e.target.value})}>
+                      {years.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-600 uppercase mb-2 block tracking-widest">Price</label>
+                    <input type="number" placeholder="$" className="w-full bg-[#080a11] border border-slate-800 rounded-xl p-3 text-sm focus:border-blue-500 outline-none"
+                      value={filters.price} onChange={e => setFilters({...filters, price: e.target.value})} />
+                  </div>
                 </div>
               </div>
+            </div>
+
+            <div className="bg-blue-600 rounded-3xl p-6 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group">
+               <div className="relative z-10">
+                 <h4 className="text-xs font-black uppercase tracking-widest opacity-80 mb-1">PRO TIP</h4>
+                 <p className="text-sm font-bold leading-snug">Wholesale prices represent auction-grade buy-ins. Aim for green tags.</p>
+               </div>
+               <Zap className="absolute -right-4 -bottom-4 text-white/10 group-hover:scale-125 transition-transform" size={120} />
             </div>
           </div>
 
-          {/* SCOPE RESULTS PANEL */}
-          <div className="lg:col-span-8 space-y-6">
+          {/* MAIN SECTION: LISTINGS & DASHBOARD */}
+          <div className="lg:col-span-9 space-y-6">
             
-            {/* VALUATION SUMMARY */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-[#161c2d] p-5 rounded-2xl border border-slate-800">
-                <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase mb-2"><TrendingDown size={14}/> Wholesale</div>
-                <div className="text-xl font-black text-white">${valuation.wholesale.toLocaleString()}</div>
+            {/* VALUE METRICS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#111522] border border-slate-800 p-5 rounded-3xl shadow-lg group hover:border-blue-500/50 transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Wholesale</div>
+                  <TrendingDown size={14} className="text-green-500"/>
+                </div>
+                <div className="text-3xl font-black text-white italic">${valuation.wholesale.toLocaleString()}</div>
               </div>
-              <div className="bg-[#161c2d] p-5 rounded-2xl border border-slate-800">
-                <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase mb-2"><Landmark size={14}/> Trade-In</div>
-                <div className="text-xl font-black text-white">${valuation.tradeIn.toLocaleString()}</div>
+              <div className="bg-[#111522] border border-slate-800 p-5 rounded-3xl shadow-lg group hover:border-blue-500/50 transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Trade-In</div>
+                  <Landmark size={14} className="text-blue-500"/>
+                </div>
+                <div className="text-3xl font-black text-white italic">${valuation.tradeIn.toLocaleString()}</div>
               </div>
-              <div className="bg-[#161c2d] p-5 rounded-2xl border border-slate-800">
-                <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase mb-2"><ShoppingCart size={14}/> Retail Market</div>
-                <div className="text-xl font-black text-white">${valuation.retail.toLocaleString()}</div>
+              <div className="bg-[#111522] border border-slate-800 p-5 rounded-3xl shadow-lg group hover:border-blue-500/50 transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Retail</div>
+                  <ShoppingCart size={14} className="text-yellow-500"/>
+                </div>
+                <div className="text-3xl font-black text-white italic">${valuation.retail.toLocaleString()}</div>
               </div>
             </div>
 
-            {/* LISTING RESULT CARD */}
-            <div className={`bg-[#161c2d] border-2 rounded-[2rem] p-4 flex flex-col md:flex-row items-center gap-6 transition-all duration-500 ${isGreatDeal ? 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.15)]' : 'border-slate-800'}`}>
-              
-              {/* Image with Hover Preview */}
-              <div 
-                className="relative w-full md:w-56 h-48 bg-[#0b0f1a] rounded-2xl overflow-hidden cursor-zoom-in group"
-                onMouseEnter={() => setHoveredImg(currentListing.images[0])}
-                onMouseLeave={() => setHoveredImg(null)}
-                onClick={() => setSelectedGallery(currentListing)}
-              >
-                <img src={currentListing.images[0]} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Eye className="text-white" size={32} />
+            {/* LIVE SOURCING COMMANDS */}
+            <div className="bg-[#111522] border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
+              <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/30">
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase italic">Active Search Console</h3>
+                  <p className="text-xs text-slate-500 font-medium">Scoping {filters.year} {filters.make} {filters.model || 'Inventory'}</p>
+                </div>
+                <div className="flex gap-2">
+                   <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                   <div className="text-[9px] font-bold text-slate-500 uppercase">Live Sourcing Enabled</div>
                 </div>
               </div>
 
-              {/* Data */}
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-blue-500 uppercase tracking-widest"><Info size={14}/> Market Status</div>
-                <h3 className="text-3xl font-black text-white tracking-tighter">{currentListing.title}</h3>
-                <div className="flex gap-4 text-xs font-bold text-slate-500 uppercase tracking-tighter">
-                  <span>Automatic</span> • <span>Clean Title</span> • <span>Private Seller</span>
-                </div>
-                
-                <div className="pt-4 flex items-center gap-4">
-                  <div className={`text-4xl font-black tracking-tight ${isGreatDeal ? 'text-green-400' : 'text-white'}`}>
-                    ${currentListing.price.toLocaleString()}
+              <div className="p-8 grid md:grid-cols-2 gap-4">
+                <a href={getKijijiUrl()} target="_blank" rel="noreferrer" className="flex items-center justify-between p-6 bg-[#080a11] border border-slate-800 rounded-3xl hover:border-blue-600 transition-all group">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-slate-800 p-3 rounded-2xl group-hover:bg-blue-600 transition-all"><Search size={24}/></div>
+                    <div>
+                      <div className="text-white font-black text-lg group-hover:text-blue-500 transition-all">KIJIJI CANADA</div>
+                      <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Private & Dealer Feed</div>
+                    </div>
                   </div>
-                  {isGreatDeal && <span className="bg-green-500/10 text-green-500 text-[10px] font-black px-3 py-1 rounded-full border border-green-500/30">STEAL DETECTED</span>}
-                </div>
-              </div>
+                  <ArrowUpRight className="text-slate-700 group-hover:text-white transition-all"/>
+                </a>
 
-              <div className="pr-4">
-                <a href="#" className="bg-blue-600 hover:bg-blue-500 text-white font-black p-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-900/40">
-                  <ExternalLink size={20} />
+                <a href={getAutoTraderUrl()} target="_blank" rel="noreferrer" className="flex items-center justify-between p-6 bg-[#080a11] border border-slate-800 rounded-3xl hover:border-red-600 transition-all group">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-slate-800 p-3 rounded-2xl group-hover:bg-red-600 transition-all"><Car size={24}/></div>
+                    <div>
+                      <div className="text-white font-black text-lg group-hover:text-red-500 transition-all">AUTOTRADER.CA</div>
+                      <div className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Premium Market Feed</div>
+                    </div>
+                  </div>
+                  <ArrowUpRight className="text-slate-700 group-hover:text-white transition-all"/>
                 </a>
               </div>
+
+              {/* LISTING COMPARISON AREA (Simulated Listing) */}
+              <div className="p-8 pt-0">
+                <div className={`p-1 bg-gradient-to-r ${isDeal ? 'from-green-500 to-emerald-500' : 'from-slate-800 to-slate-900'} rounded-[2rem]`}>
+                  <div className="bg-[#080a11] rounded-[1.9rem] p-6 flex flex-col md:flex-row items-center gap-6">
+                    <div className="w-full md:w-44 h-32 bg-slate-900 rounded-2xl flex items-center justify-center relative overflow-hidden">
+                       <Car size={40} className="text-slate-800" />
+                       <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-[8px] font-black text-white uppercase tracking-widest flex items-center gap-1">
+                         <MapPin size={8}/> CANADA
+                       </div>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                       <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Candidate Analysis</div>
+                       <h4 className="text-2xl font-black text-white italic">{filters.year} {filters.make} {filters.model || '...'}</h4>
+                       <div className="flex gap-4 text-slate-500 text-[10px] font-bold uppercase">
+                          <span className="flex items-center gap-1"><Gauge size={12}/> Verified Mileage Needed</span>
+                       </div>
+                    </div>
+                    <div className="text-right">
+                       <div className={`text-4xl font-black italic tracking-tighter ${isDeal ? 'text-green-400' : 'text-white'}`}>
+                        ${filters.price ? Number(filters.price).toLocaleString() : '---'}
+                       </div>
+                       <div className="text-[10px] font-black text-slate-600 uppercase mt-1">
+                        {isDeal ? 'BELOW WHOLESALE - BUY NOW' : 'MARKET PRICED'}
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
-
-        {/* --- DYNAMIC COMPONENTS --- */}
-
-        {/* Hover-Zoom Preview Popover */}
-        {hoveredImg && (
-          <div className="fixed top-24 right-10 w-[450px] h-72 border-4 border-blue-500 bg-slate-900 rounded-3xl overflow-hidden shadow-2xl z-[60] pointer-events-none animate-in fade-in zoom-in duration-200">
-            <img src={hoveredImg} className="w-full h-full object-cover" />
-            <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-xl border border-white/10 text-[10px] font-black text-white text-center uppercase tracking-[0.3em]">
-              High-Res Scan Preview
-            </div>
-          </div>
-        )}
-
-        {/* Lightbox Gallery */}
-        {selectedGallery && (
-          <div className="fixed inset-0 bg-black/95 z-[100] flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
-            <button onClick={() => setSelectedGallery(null)} className="absolute top-8 right-8 text-white hover:text-blue-500 transition-colors"><X size={48} /></button>
-            <div className="relative w-full max-w-5xl h-[70vh] flex items-center justify-center">
-              <button onClick={() => setImgIndex(prev => (prev - 1 + selectedGallery.images.length) % selectedGallery.images.length)} className="absolute left-0 bg-white/10 p-4 rounded-full hover:bg-blue-600 transition-all"><ChevronLeft size={32}/></button>
-              <img src={selectedGallery.images[imgIndex]} className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain border border-white/10" />
-              <button onClick={() => setImgIndex(prev => (prev + 1) % selectedGallery.images.length)} className="absolute right-0 bg-white/10 p-4 rounded-full hover:bg-blue-600 transition-all"><ChevronRight size={32}/></button>
-            </div>
-            <div className="mt-10 flex gap-4">
-              {selectedGallery.images.map((img, i) => (
-                <img key={i} src={img} onClick={() => setImgIndex(i)} className={`w-24 h-16 object-cover rounded-xl cursor-pointer border-2 transition-all ${imgIndex === i ? 'border-blue-500 scale-110 shadow-lg shadow-blue-500/40' : 'border-transparent opacity-40 hover:opacity-100'}`} />
-              ))}
-            </div>
-          </div>
-        )}
-
       </div>
     </div>
   );
